@@ -166,6 +166,11 @@
             const url = document.getElementById('videoUrl').value;
             const videoId = extractVideoId(url);
 
+            if (!navigator.onLine) {
+                showError("Nessuna connessione a Internet. Controlla la tua connessione e riprova.");
+                return;
+            }
+
             if (!player) {
                 showError("Player non ancora inizializzato. Attendi qualche secondo e riprova.");
                 return;
@@ -190,6 +195,7 @@
             const videoEntry = {
                 url: url,
                 videoId: videoId,
+                thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`, // URL della miniatura
                 timestamp: new Date().toLocaleString()
             };
 
@@ -209,7 +215,10 @@
             videoHistory.forEach((entry, index) => {
                 const li = document.createElement('li');
                 li.className = 'history-item';
-                li.innerHTML = `Video ${index + 1} - ${entry.timestamp}`;
+                li.innerHTML = `
+                    <img src="${entry.thumbnail}" alt="Miniatura" style="width: 120px; height: auto; border-radius: 5px; margin-right: 10px;">
+                    Video ${index + 1} - ${entry.timestamp}
+                `;
                 li.onclick = () => {
                     document.getElementById('videoUrl').value = entry.url;
                     if (player) {
@@ -218,6 +227,28 @@
                 };
                 historyList.appendChild(li);
             });
+        }
+
+        function onPlayerError(event) {
+            let errorMessage = "Errore nel caricamento del video. Verifica l'URL e riprova.";
+            
+            switch (event.data) {
+                case 2:
+                    errorMessage = "Il video non è stato trovato. Controlla l'URL.";
+                    break;
+                case 100:
+                    errorMessage = "Il video è privato o non disponibile.";
+                    break;
+                case 101:
+                case 150:
+                    errorMessage = "Il video non può essere riprodotto in questo contesto.";
+                    break;
+                default:
+                    errorMessage = "Errore sconosciuto. Riprova più tardi.";
+                    break;
+            }
+            
+            showError(errorMessage);
         }
 
         function showError(message) {
